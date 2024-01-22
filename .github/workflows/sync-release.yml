@@ -56,7 +56,7 @@ jobs:
             git add -f *.apk
             git commit -m "Update APK file"
             # 确保下面的 'main' 是要推送到的分支名称
-            git push -f origin HEAD:main
+            git push origin HEAD:main
           else
             echo "No APK files to commit."
           fi
