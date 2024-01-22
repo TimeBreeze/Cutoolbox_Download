@@ -1,0 +1,69 @@
+
+name: Sync APK
+
+on:
+  schedule:
+    # 每天UTC时间00:00自动检查新release，可以根据需要调整cron表达式
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # 允许手动触发workflow
+
+jobs:
+  check-releases:
+    runs-on: ubuntu-latest
+    steps:
+      # 检出仓库代码
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      
+      # 设置GitHub CLI
+      - name: Set up GitHub CLI
+        run: |
+          echo "${{ secrets.MY_GITHUB_TOKEN }}" | gh auth login --with-token
+      
+      # 设置Node.js环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      
+      
+      # 下载最新的预发布版本的APK文件
+      - name: Get latest prerelease APK
+        id: prerelease
+        run: |
+          # 使用GitHub CLI获取最新预发布信息
+          LATEST_PRE_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases --jq '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
+            
+            # 如果存在预发布版本则进行下载
+           if [ -n "$LATEST_PRE_RELEASE" ]; then
+             echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
+             gh release download $LATEST_PRE_RELEASE --repo chenzyadb/CuprumTurbo-Scheduler --pattern "*.apk" --dir ./downloads
+           else
+             echo "No prerelease found."
+           fi
+      
+      # 检查APK文件并提交到仓库
+      - name: Check and push APK file to repository
+        run: |
+          FILES=./downloads/*.apk
+          if compgen -G "$FILES" > /dev/null; then
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git fetch
+            git checkout ${GITHUB_REF#refs/heads/}
+            mv -v ./downloads/*.apk ./
+            git add -f *.apk
+            git commit -m "Update APK file"
+            # 确保下面的 'main' 是要推送到的分支名称
+            git push -f origin HEAD:main
+          else
+            echo "No APK files to commit."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+
+
+   
