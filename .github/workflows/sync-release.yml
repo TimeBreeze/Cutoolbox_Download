@@ -18,14 +18,11 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
       
-      # 切换到仓库目录
-      - name: Change to repository directory
-        run: cd chenzyadb/CuprumTurbo-Scheduler
-      
       # 获取最新发布的信息并推送到仓库
       - name: Get latest release info and push to repository
         run: |
           # 使用GitHub API获取最新发布信息
+          cd $GITHUB_WORKSPACE
           LATEST_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest --jq '.tag_name')
           if [ -n "$LATEST_RELEASE" ]; then
             echo "Latest Release: $LATEST_RELEASE"
@@ -44,6 +41,7 @@ jobs:
         id: prerelease
         run: |
           # 使用GitHub CLI获取最新预发布信息
+          cd $GITHUB_WORKSPACE
           LATEST_PRE_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases --jq '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
           if [ -n "$LATEST_PRE_RELEASE" ]; then
             echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
@@ -55,6 +53,7 @@ jobs:
       # 检查APK文件并提交到仓库
       - name: Check and push APK file to repository
         run: |
+          cd $GITHUB_WORKSPACE
           ls -l ./downloads/*.apk
           FILES=./downloads/*.apk
           if compgen -G "$FILES" > /dev/null; then
