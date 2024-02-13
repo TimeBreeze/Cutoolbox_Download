@@ -20,7 +20,8 @@ jobs:
           if [ -n "$LATEST_RELEASE" ]; then
             echo "Latest Release: $LATEST_RELEASE"
             curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases" | jq '.' > release_info.json
-            echo "::set-output name=release_info::release_info.json"
+            jq -r '.' release_info.json > release_info.txt
+            echo "::set-output name=release_info::release_info.txt"
           else
             echo "No release found."
           fi
@@ -31,3 +32,12 @@ jobs:
         with:
           name: release_info
           path: ${{ steps.get_release_info.outputs.release_info }}
+
+      # 将获取的最新发布信息提交到当前仓库
+      - name: Commit release info to current repository
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add release_info.json
+          git commit -m "Update release info"
+          git push origin HEAD:main
