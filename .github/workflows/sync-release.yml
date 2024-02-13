@@ -44,6 +44,7 @@ jobs:
       # 检查APK文件并提交到仓库
       - name: Check and push APK file to repository
         run: |
+          ls -l ./downloads/*.apk
           FILES=./downloads/*.apk
           if compgen -G "$FILES" > /dev/null; then
             git config --global user.name 'github-actions[bot]'
