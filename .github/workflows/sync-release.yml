@@ -21,7 +21,7 @@ jobs:
       # 获取最新发布的信息并推送到仓库
       - name: Get latest release info and push to repository
         run: |
-          # 使用GitHub CLI获取最新发布信息
+          # 使用GitHub API获取最新发布信息
           LATEST_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest --jq '.tag_name')
           if [ -n "$LATEST_RELEASE" ]; then
             echo "Latest Release: $LATEST_RELEASE"
