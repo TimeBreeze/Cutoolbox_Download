@@ -22,17 +22,16 @@ jobs:
       - name: Get latest release info and push to repository
         run: |
           # 使用GitHub API获取最新发布信息
-          cd $GITHUB_WORKSPACE
           LATEST_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest --jq '.tag_name')
           if [ -n "$LATEST_RELEASE" ]; then
             echo "Latest Release: $LATEST_RELEASE"
             gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest --jq '.' > release_info.json
+            git add release_info.json
+            git commit -m "Update release info"
+            git push origin HEAD:main
           else
             echo "No release found."
           fi
-          git add release_info.json
-          git commit -m "Update release info"
-          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
@@ -40,8 +39,7 @@ jobs:
       - name: Get latest prerelease APK
         id: prerelease
         run: |
-          # 使用GitHub CLI获取最新预发布信息
-          cd $GITHUB_WORKSPACE
+          # 使用GitHub API获取最新预发布信息
           LATEST_PRE_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases --jq '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
           if [ -n "$LATEST_PRE_RELEASE" ]; then
             echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
@@ -53,7 +51,6 @@ jobs:
       # 检查APK文件并提交到仓库
       - name: Check and push APK file to repository
         run: |
-          cd $GITHUB_WORKSPACE
           ls -l ./downloads/*.apk
           FILES=./downloads/*.apk
           if compgen -G "$FILES" > /dev/null; then
