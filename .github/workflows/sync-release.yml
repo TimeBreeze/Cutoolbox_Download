@@ -11,19 +11,23 @@ jobs:
   sync-apk-and-release-info:
     runs-on: ubuntu-latest
     steps:
-      # 获取最新发布的信息并推送到仓库
+      # 获取最新发布的信息并保存为工件
       - name: Get latest release info
+        id: get_release_info
         run: |
-          # 使用GitHub API获取最新发布信息
-          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest" | jq -r '.tag_name')
+          # 使用GitHub API获取最新发布信息，包括预发布版本
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases" | jq -r 'map(select(.prerelease))[0].tag_name')
           if [ -n "$LATEST_RELEASE" ]; then
             echo "Latest Release: $LATEST_RELEASE"
-            curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest" | jq '.' > release_info.json
-            git config --global user.name 'github-actions[bot]'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add release_info.json
-            git commit -m "Update release info"
-            git push origin HEAD:main
+            curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases" | jq '.' > release_info.json
+            echo "::set-output name=release_info::release_info.json"
           else
             echo "No release found."
           fi
+      
+      # 上传获取的最新发布信息文件为工件
+      - name: Upload release info as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: release_info
+          path: ${{ steps.get_release_info.outputs.release_info }}
