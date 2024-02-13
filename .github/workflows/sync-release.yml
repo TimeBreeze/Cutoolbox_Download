@@ -11,20 +11,16 @@ jobs:
   sync-apk-and-release-info:
     runs-on: ubuntu-latest
     steps:
-      # 检出仓库代码
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      
-      # 设置GitHub CLI
+      # 设置GitHub CLI身份信息
       - name: Set up GitHub CLI
         run: |
           echo "${{ secrets.MY_GITHUB_TOKEN }}" | gh auth login --with-token
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
       
-      # 设置Node.js环境
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+      # 检出仓库代码
+      - name: Checkout repo
+        uses: actions/checkout@v2
       
       # 获取最新发布的信息并推送到仓库
       - name: Get latest release info and push to repository
@@ -58,8 +54,6 @@ jobs:
           ls -l ./downloads/*.apk
           FILES=./downloads/*.apk
           if compgen -G "$FILES" > /dev/null; then
-            git config --global user.name 'github-actions[bot]'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
             git fetch
             git checkout ${GITHUB_REF#refs/heads/}
             mv -v ./downloads/*.apk ./
@@ -70,5 +64,3 @@ jobs:
           else
             echo "No APK files to commit."
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
