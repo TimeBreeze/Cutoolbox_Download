@@ -1,15 +1,14 @@
-
-name: Sync APK
+name: Sync APK and Release Info
 
 on:
-  schedule:
-    # 每天UTC时间00:00自动检查新release，可以根据需要调整cron表达式
-    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
   workflow_dispatch:
     # 允许手动触发workflow
 
 jobs:
-  check-releases:
+  sync-apk-and-release-info:
     runs-on: ubuntu-latest
     steps:
       # 检出仓库代码
@@ -27,7 +26,6 @@ jobs:
         with:
           node-version: '16'
       
-      
       # 下载最新的预发布版本的APK文件
       - name: Get latest prerelease APK
         id: prerelease
@@ -35,13 +33,13 @@ jobs:
           # 使用GitHub CLI获取最新预发布信息
           LATEST_PRE_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases --jq '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
             
-            # 如果存在预发布版本则进行下载
-           if [ -n "$LATEST_PRE_RELEASE" ]; then
-             echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
-             gh release download $LATEST_PRE_RELEASE --repo chenzyadb/CuprumTurbo-Scheduler --pattern "*.apk" --dir ./downloads
-           else
-             echo "No prerelease found."
-           fi
+          # 如果存在预发布版本则进行下载
+          if [ -n "$LATEST_PRE_RELEASE" ]; then
+            echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
+            gh release download $LATEST_PRE_RELEASE --repo chenzyadb/CuprumTurbo-Scheduler --pattern "*.apk" --dir ./downloads
+          else
+            echo "No prerelease found."
+          fi
       
       # 检查APK文件并提交到仓库
       - name: Check and push APK file to repository
@@ -55,15 +53,21 @@ jobs:
             mv -v ./downloads/*.apk ./
             git add -f *.apk
             git commit -m "Update APK file"
-            # 确保下面的 'main' 是要推送到的分支名称
+            # 强制推送到远程仓库
             git push origin HEAD:main --force
           else
             echo "No APK files to commit."
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-
-
-   
+      
+      # 获取最新发布的信息并推送到仓库
+      - name: Get latest release info and push to repository
+        run: |
+          RELEASE_INFO=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest)
+          echo "$RELEASE_INFO" > release_info.json
+          git add release_info.json
+          git commit -m "Update release info"
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
