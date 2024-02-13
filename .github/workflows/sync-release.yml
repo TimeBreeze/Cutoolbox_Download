@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: '16'
       
+      # 安装Android SDK
+      - name: Install Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y android-sdk
+
       # 下载最新的预发布版本的APK文件
       - name: Get latest prerelease APK
         id: prerelease
@@ -47,7 +53,7 @@ jobs:
           # 获取最新版本的APK文件名
           APK_FILE=$(ls ./downloads/*.apk)
           # 提取版本号
-          VERSION=$(aapt dump badging $APK_FILE | grep versionName | awk '{print $4}' | sed "s/versionName='//" | sed "s/'//")
+          VERSION=$(android-sdk/build-tools/*/aapt dump badging $APK_FILE | grep versionName | awk '{print $4}' | sed "s/versionName='//" | sed "s/'//")
           # 将版本号写入version文件
           echo "$VERSION" > version
         shell: bash
