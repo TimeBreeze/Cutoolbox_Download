@@ -26,6 +26,17 @@ jobs:
         with:
           node-version: '16'
       
+      # 获取最新发布的信息并推送到仓库
+      - name: Get latest release info and push to repository
+        run: |
+          RELEASE_INFO=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest)
+          echo "$RELEASE_INFO" > release_info.json
+          git add release_info.json
+          git commit -m "Update release info"
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
       # 下载最新的预发布版本的APK文件
       - name: Get latest prerelease APK
         id: prerelease
@@ -40,18 +51,6 @@ jobs:
           else
             echo "No prerelease found."
           fi
-      
-      # 获取最新发布的信息并推送到仓库
-      - name: Get latest release info and push to repository
-        run: |
-          RELEASE_INFO=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest)
-          echo "$RELEASE_INFO" > release_info.json
-          git add release_info.json
-          git commit -m "Update release info"
-          git push origin HEAD:main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
       
       # 检查APK文件并提交到仓库
       - name: Check and push APK file to repository
@@ -73,4 +72,3 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
