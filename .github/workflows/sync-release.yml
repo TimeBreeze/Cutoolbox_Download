@@ -26,7 +26,6 @@ jobs:
         with:
           node-version: '16'
       
-      
       # 下载最新的预发布版本的APK文件
       - name: Get latest prerelease APK
         id: prerelease
@@ -38,21 +37,21 @@ jobs:
           if [ -n "$LATEST_PRE_RELEASE" ]; then
             echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
             gh release download $LATEST_PRE_RELEASE --repo chenzyadb/CuprumTurbo-Scheduler --pattern "*.apk" --dir ./downloads
-            
-            # 提取APK文件的版本号
-            APK_FILE=$(find ./downloads -name "*.apk" | head -n 1)
-            VERSION_NAME=$(aapt dump badging "$APK_FILE" | grep -oP "versionName='\K[^']+")
-            
-            # 移除空格和特殊字符，以便作为文件名使用
-            CLEAN_VERSION_NAME=$(echo "$VERSION_NAME" | tr -d '[:space:]' | tr -cd '[:alnum:]._-')
-            
-            # 使用版本号重命名APK文件
-            NEW_APK_FILE="./downloads/${CLEAN_VERSION_NAME}.apk"
-            mv "$APK_FILE" "$NEW_APK_FILE"
           else
             echo "No prerelease found."
           fi
       
+      # 识别APK版本号并写入版本文件
+      - name: Identify and write APK version to file
+        run: |
+          # 获取最新版本的APK文件名
+          APK_FILE=$(ls ./downloads/*.apk)
+          # 提取版本号
+          VERSION=$(aapt dump badging $APK_FILE | grep versionName | awk '{print $4}' | sed "s/versionName='//" | sed "s/'//")
+          # 将版本号写入version文件
+          echo "$VERSION" > version
+        shell: bash
+
       # 检查APK文件并提交到仓库
       - name: Check and push APK file to repository
         run: |
@@ -63,8 +62,9 @@ jobs:
             git fetch
             git checkout ${GITHUB_REF#refs/heads/}
             mv -v ./downloads/*.apk ./
-            git add -f *.apk
-            git commit -m "Update APK file"
+            # 添加版本文件
+            git add -f *.apk version
+            git commit -m "Update APK file and version"
             # 确保下面的 'main' 是要推送到的分支名称
             git push origin HEAD:main
           else
