@@ -76,3 +76,14 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Mirror the Github organization repos to Gitee.
+        uses: Yikun/hub-mirror-action@master
+        with:
+            src: github/NightRainMilkyWay
+            dst: gitee/Oldmemories
+            dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+            dst_token: ${{ secrets.GITEE_TOKEN }}
+            account_type: org
+            # src_account_type: org
+            # dst_account_type: org
