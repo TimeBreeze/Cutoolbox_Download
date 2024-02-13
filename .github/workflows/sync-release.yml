@@ -1,4 +1,4 @@
-name: Sync APK and Release Info
+name: Sync APK
 
 on:
   schedule:
@@ -8,39 +8,54 @@ on:
     # 允许手动触发workflow
 
 jobs:
-  sync-apk-and-release-info:
+  check-releases:
     runs-on: ubuntu-latest
     steps:
-      # 获取最新发布的信息并保存为工件
-      - name: Get latest release info
-        id: get_release_info
+      # 检出仓库代码
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      
+      # 设置GitHub CLI
+      - name: Set up GitHub CLI
         run: |
-          # 使用GitHub API获取最新发布信息，包括预发布版本
-          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases" | jq -r 'map(select(.prerelease))[0].tag_name')
-          if [ -n "$LATEST_RELEASE" ]; then
-            echo "Latest Release: $LATEST_RELEASE"
-            curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases" | jq '.' > release_info.json
-            jq -r '.' release_info.json > release_info.txt
-            echo "::set-output name=release_info::release_info.txt"
+          echo "${{ secrets.MY_GITHUB_TOKEN }}" | gh auth login --with-token
+      
+      # 设置Node.js环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      
+      # 下载最新的预发布版本的APK文件
+      - name: Get latest prerelease APK
+        id: prerelease
+        run: |
+          # 使用GitHub CLI获取最新预发布信息
+          LATEST_PRE_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases --jq '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
+            
+          # 如果存在预发布版本则进行下载
+          if [ -n "$LATEST_PRE_RELEASE" ]; then
+            echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
+            gh release download $LATEST_PRE_RELEASE --repo chenzyadb/CuprumTurbo-Scheduler --pattern "*.apk" --dir ./downloads
           else
-            echo "No release found."
+            echo "No prerelease found."
           fi
       
-      # 上传获取的最新发布信息文件为工件
-      - name: Upload release info as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: release_info
-          path: ${{ steps.get_release_info.outputs.release_info }}
-
-      # 检查是否在 git 仓库中，如果是，则提交获取的最新发布信息文件到当前仓库
-      - name: Commit release info to current repository
-        if: success() && failure()
+      # 检查APK文件并提交到仓库
+      - name: Check and push APK file to repository
         run: |
-          if [ -d .git ]; then
+          FILES=./downloads/*.apk
+          if compgen -G "$FILES" > /dev/null; then
             git config --global user.name 'github-actions[bot]'
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add release_info.json
-            git commit -m "Update release info"
+            git fetch
+            git checkout ${GITHUB_REF#refs/heads/}
+            mv -v ./downloads/*.apk ./
+            git add -f *.apk
+            git commit -m "Update APK file"
             git push origin HEAD:main
+          else
+            echo "No APK files to commit."
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
