@@ -11,21 +11,14 @@ jobs:
   sync-apk-and-release-info:
     runs-on: ubuntu-latest
     steps:
-      # 设置GitHub CLI身份信息
-      - name: Set up GitHub CLI
-        run: |
-          echo "${{ secrets.MY_GITHUB_TOKEN }}" | gh auth login --with-token
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-      
       # 获取最新发布的信息并推送到仓库
       - name: Get latest release info and push to repository
         run: |
-          # 使用GitHub API获取最新发布信息
-          LATEST_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest --jq '.tag_name')
+          # 使用cURL获取最新发布信息
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest" | jq -r '.tag_name')
           if [ -n "$LATEST_RELEASE" ]; then
             echo "Latest Release: $LATEST_RELEASE"
-            gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest --jq '.' > release_info.json
+            curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest" | jq '.' > release_info.json
             git add release_info.json
             git commit -m "Update release info"
             git push origin HEAD:main
