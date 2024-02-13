@@ -68,9 +68,11 @@ jobs:
             git checkout ${GITHUB_REF#refs/heads/}
             mv -v ./downloads/*.apk ./
             git add -f *.apk version
-            git commit -m "Update APK file and version"
+            git commit -m "Update APK file"
+            # 确保下面的 'main' 是要推送到的分支名称
             git push origin HEAD:main
           else
             echo "No APK files to commit."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
