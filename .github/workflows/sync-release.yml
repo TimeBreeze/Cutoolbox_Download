@@ -1,9 +1,9 @@
 name: Sync APK and Release Info
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    # 每天UTC时间00:00自动检查新release，可以根据需要调整cron表达式
+    - cron: '0 0 * * *'
   workflow_dispatch:
     # 允许手动触发workflow
 
@@ -12,48 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # 获取最新发布的信息并推送到仓库
-      - name: Get latest release info and push to repository
+      - name: Get latest release info
         run: |
-          # 使用cURL获取最新发布信息
+          # 使用GitHub API获取最新发布信息
           LATEST_RELEASE=$(curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest" | jq -r '.tag_name')
           if [ -n "$LATEST_RELEASE" ]; then
             echo "Latest Release: $LATEST_RELEASE"
             curl -s "https://api.github.com/repos/chenzyadb/CuprumTurbo-Scheduler/releases/latest" | jq '.' > release_info.json
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
             git add release_info.json
             git commit -m "Update release info"
             git push origin HEAD:main
           else
             echo "No release found."
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      # 下载最新的预发布版本的APK文件
-      - name: Get latest prerelease APK
-        id: prerelease
-        run: |
-          # 使用GitHub API获取最新预发布信息
-          LATEST_PRE_RELEASE=$(gh api repos/chenzyadb/CuprumTurbo-Scheduler/releases --jq '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
-          if [ -n "$LATEST_PRE_RELEASE" ]; then
-            echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
-            gh release download $LATEST_PRE_RELEASE --repo chenzyadb/CuprumTurbo-Scheduler --pattern "*.apk" --dir ./downloads
-          else
-            echo "No prerelease found."
-          fi
-      
-      # 检查APK文件并提交到仓库
-      - name: Check and push APK file to repository
-        run: |
-          ls -l ./downloads/*.apk
-          FILES=./downloads/*.apk
-          if compgen -G "$FILES" > /dev/null; then
-            git fetch
-            git checkout ${GITHUB_REF#refs/heads/}
-            mv -v ./downloads/*.apk ./
-            git add -f *.apk
-            git commit -m "Update APK file"
-            # 强制推送到远程仓库
-            git push origin HEAD:main --force
-          else
-            echo "No APK files to commit."
           fi
