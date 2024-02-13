@@ -37,6 +37,17 @@ jobs:
           if [ -n "$LATEST_PRE_RELEASE" ]; then
             echo "Downloading Prerelease: $LATEST_PRE_RELEASE"
             gh release download $LATEST_PRE_RELEASE --repo chenzyadb/CuprumTurbo-Scheduler --pattern "*.apk" --dir ./downloads
+            
+            # 提取APK文件的版本号
+            APK_FILE=$(find ./downloads -name "*.apk" | head -n 1)
+            VERSION_NAME=$(aapt dump badging "$APK_FILE" | grep -oP "versionName='\K[^']+")
+            
+            # 移除空格和特殊字符，以便作为文件名使用
+            CLEAN_VERSION_NAME=$(echo "$VERSION_NAME" | tr -d '[:space:]' | tr -cd '[:alnum:]._-')
+            
+            # 使用版本号重命名APK文件
+            NEW_APK_FILE="./downloads/${CLEAN_VERSION_NAME}.apk"
+            mv "$APK_FILE" "$NEW_APK_FILE"
           else
             echo "No prerelease found."
           fi
@@ -53,6 +64,7 @@ jobs:
             mv -v ./downloads/*.apk ./
             git add -f *.apk
             git commit -m "Update APK file"
+            # 确保下面的 'main' 是要推送到的分支名称
             git push origin HEAD:main
           else
             echo "No APK files to commit."
