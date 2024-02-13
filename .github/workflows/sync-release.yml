@@ -18,6 +18,10 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
       
+      # 切换到仓库目录
+      - name: Change to repository directory
+        run: cd chenzyadb/CuprumTurbo-Scheduler
+      
       # 获取最新发布的信息并推送到仓库
       - name: Get latest release info and push to repository
         run: |
