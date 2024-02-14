@@ -1,0 +1,6 @@
+id=CuToolbox_Download
+name=CuToolbox自动检测更新
+version=v1.0
+versionCode=1
+author=Oldmemorie
+description=开机2分钟检测是否安装ctoolbox,判断版本号，自动下载CuToolbox并安装

@@ -77,15 +77,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-    # 任务2: 部署 Gitee Pages
-  deploy-gitee-pages:
-    runs-on: ubuntu-latest
-    steps:
-      # 1、同步内容到 Gitee
-      - name: Sync to Gitee
-        uses: wearerequired/git-mirror-action@master #使用action库
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.GITEE_RSA_PRIVATE_KEY }} #Gitee私钥
-        with:
-          source-repo: git@github.com:TimeBreeze/Cutoolbox_Download.git
-          destination-repo: git@gitee.com:NightRainMilkyWay/Cutoolbox_Download.git #Gitee 目标仓库地址
